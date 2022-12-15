@@ -1,0 +1,43 @@
+version: '2'
+services:
+  zookeeper:
+    image: quay.io/debezium/zookeeper:2.0
+    ports:
+     - 2181:2181
+     - 2888:2888
+     - 3888:3888
+  kafka:
+    image: quay.io/debezium/kafka:2.0
+    ports:
+     - 9092:9092
+    links:
+     - zookeeper
+    environment:
+     - ZOOKEEPER_CONNECT=zookeeper:2181
+  postgres:
+    image: gunnarmorling/example-postgres:1.0
+    build:
+      context: postgres
+    ports:
+     - 5432:5432
+    environment:
+     - POSTGRES_USER=postgresuser
+     - POSTGRES_PASSWORD=postgrespw
+     - POSTGRES_DB=postgresdb
+  connect:
+    image: quay.io/debezium/connect:2.0
+    ports:
+     - 8083:8083
+     - 5005:5005
+    links:
+     - kafka
+     - postgres
+    environment:
+     - BOOTSTRAP_SERVERS=kafka:9092
+     - GROUP_ID=1
+     - CONFIG_STORAGE_TOPIC=my_connect_configs
+     - OFFSET_STORAGE_TOPIC=my_connect_offsets
+     - STATUS_STORAGE_TOPIC=my_connect_statuses
+     - KAFKA_DEBUG=true
+     - DEBUG_SUSPEND_FLAG=n
+     - JAVA_DEBUG_PORT=0.0.0.0:5005
